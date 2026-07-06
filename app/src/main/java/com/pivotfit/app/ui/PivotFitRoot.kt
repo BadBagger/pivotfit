@@ -352,14 +352,62 @@ private fun WorkoutCompleteScreen(state: PivotUiState, onSave: (RpeRating, Strin
     var saved by remember { mutableStateOf(false) }
     ScreenList {
         Text("Workout complete", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        MessageCard("Good work", "Short workout is still a win. ${state.activeExercises.count { it.done }} exercises completed.")
-        EnumChips("Overall", RpeRating.entries, rpe, { it.label }) { rpe = it }
-        RowToggle("Ran out of time", ranOut) { ranOut = !ranOut }
-        TextField(value = notes, onValueChange = { notes = it }, label = { Text("Notes") }, modifier = Modifier.fillMaxWidth())
-        BigButton(if (saved) "Saved" else "Save workout") { onSave(rpe, notes, ranOut); saved = true }
-        MessageCard("Next adjustment", state.completionMessage)
+        if (!saved) {
+            CompletionPreview(state)
+            EnumChips("Overall", RpeRating.entries, rpe, { it.label }) { rpe = it }
+            RowToggle("Ran out of time", ranOut) { ranOut = !ranOut }
+            TextField(value = notes, onValueChange = { notes = it }, label = { Text("Notes") }, modifier = Modifier.fillMaxWidth())
+            BigButton("Save workout") { onSave(rpe, notes, ranOut); saved = true }
+        } else {
+            CompletionSavedSummary(state.lastCompletionSummary)
+        }
         OutlinedButton(onClick = onHome, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Home") }
     }
+}
+
+@Composable
+private fun CompletionPreview(state: PivotUiState) {
+    val completed = state.activeExercises.count { it.done }
+    val total = state.activeExercises.size
+    MessageCard("Good work", "Short workout is still a win. $completed of $total exercises completed.")
+    SummaryGrid(
+        items = listOf(
+            "Exercises" to "$completed/$total",
+            "Pivots" to state.pivotEvents.size.toString(),
+            "Skipped" to state.skippedExercises.size.toString(),
+            "Soreness flags" to state.checkIn.sorenessAreas.size.toString()
+        )
+    )
+    if (state.pivotEvents.isNotEmpty()) {
+        MessageCard("Pivots used", state.pivotEvents.joinToString("\n"))
+    }
+    if (state.skippedExercises.isNotEmpty()) {
+        MessageCard("Skipped", state.skippedExercises.joinToString("\n"))
+    }
+}
+
+@Composable
+private fun CompletionSavedSummary(summary: WorkoutCompletionSummary?) {
+    if (summary == null) {
+        MessageCard("Saved", "Workout saved. Short workout is still a win.")
+        return
+    }
+    MessageCard("Saved", "${summary.title}\n${summary.durationMinutes} min, ${summary.completedExercises}/${summary.totalExercises} exercises, RPE ${summary.overallRpe}")
+    SummaryGrid(
+        items = listOf(
+            "Minutes" to summary.durationMinutes.toString(),
+            "Exercises" to "${summary.completedExercises}/${summary.totalExercises}",
+            "Pivots" to summary.pivotsUsed.toString(),
+            "Skipped" to summary.skippedExercises.size.toString()
+        )
+    )
+    if (summary.sorenessFlags.isNotEmpty()) {
+        MessageCard("Soreness noted", summary.sorenessFlags.joinToString())
+    }
+    if (summary.skippedExercises.isNotEmpty()) {
+        MessageCard("Skipped exercises", summary.skippedExercises.joinToString("\n"))
+    }
+    MessageCard("Next adjustment", summary.nextRecommendation)
 }
 
 @Composable
@@ -551,6 +599,31 @@ private fun StatRow(label: String, value: String) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun SummaryGrid(items: List<Pair<String, String>>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items.chunked(2).forEach { rowItems ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                rowItems.forEach { (label, value) ->
+                    Card(
+                        shape = RoundedCornerShape(8.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+                if (rowItems.size == 1) {
+                    Spacer(Modifier.weight(1f))
+                }
+            }
+        }
     }
 }
 

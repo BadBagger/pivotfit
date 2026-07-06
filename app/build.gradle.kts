@@ -27,8 +27,8 @@ android {
         applicationId = "com.pivotfit.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.1.2-onboarding"
+        versionCode = 4
+        versionName = "0.1.3-completion-summary"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

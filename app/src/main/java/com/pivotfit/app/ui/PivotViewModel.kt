@@ -35,6 +35,18 @@ data class ActiveExerciseState(
     val notes: String = ""
 )
 
+data class WorkoutCompletionSummary(
+    val title: String = "",
+    val durationMinutes: Int = 0,
+    val completedExercises: Int = 0,
+    val totalExercises: Int = 0,
+    val pivotsUsed: Int = 0,
+    val skippedExercises: List<String> = emptyList(),
+    val sorenessFlags: List<String> = emptyList(),
+    val overallRpe: String = "",
+    val nextRecommendation: String = "Short workout is still a win."
+)
+
 data class PivotUiState(
     val checkIn: TodayCheckIn = TodayCheckIn(),
     val generatedWorkout: GeneratedWorkout? = null,
@@ -43,7 +55,8 @@ data class PivotUiState(
     val pivotEvents: List<String> = emptyList(),
     val skippedExercises: List<String> = emptyList(),
     val workoutStartedAt: Long = System.currentTimeMillis(),
-    val completionMessage: String = "Short workout is still a win."
+    val completionMessage: String = "Short workout is still a win.",
+    val lastCompletionSummary: WorkoutCompletionSummary? = null
 )
 
 class PivotViewModel(private val repository: PivotRepository) : ViewModel() {
@@ -160,7 +173,21 @@ class PivotViewModel(private val repository: PivotRepository) : ViewModel() {
             )
         }
         repository.saveSession(session, logs)
-        internal.value = state.copy(completionMessage = progression.nextStep(finalRpe, logs.any { it.painFlag }, ranOutOfTime))
+        val recommendation = progression.nextStep(finalRpe, logs.any { it.painFlag }, ranOutOfTime)
+        internal.value = state.copy(
+            completionMessage = recommendation,
+            lastCompletionSummary = WorkoutCompletionSummary(
+                title = workout.title,
+                durationMinutes = duration,
+                completedExercises = completed,
+                totalExercises = state.activeExercises.size,
+                pivotsUsed = state.pivotEvents.size,
+                skippedExercises = state.skippedExercises,
+                sorenessFlags = state.checkIn.sorenessAreas.map { it.label },
+                overallRpe = finalRpe.label,
+                nextRecommendation = recommendation
+            )
+        )
     }
 
     fun deleteHistory() = viewModelScope.launch { repository.deleteHistory() }

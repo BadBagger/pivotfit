@@ -8,7 +8,7 @@ This repository now contains the Android MVP source.
 
 - Package: `com.pivotfit.app`
 - Stack: Kotlin, Jetpack Compose, Material 3, Room, DataStore
-- Version: `0.1.0-mvp`, `versionCode = 1`
+- Version: `0.1.1-adaptive-tests`, `versionCode = 2`
 - Local installer artifact: `PivotFit-release.apk` when built locally
 
 ## MVP Scope
@@ -27,6 +27,7 @@ Use the local Gradle wrapper:
 ```powershell
 .\gradlew.bat :app:assembleDebug
 .\gradlew.bat :app:assembleRelease
+.\gradlew.bat :app:testDebugUnitTest
 ```
 
 Release signing uses ignored local files:

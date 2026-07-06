@@ -42,9 +42,10 @@ class AdaptiveWorkoutGenerator(private val library: List<Exercise>) {
             .asSequence()
             .filter { modeCategory == it.category || (modeCategory == ExerciseCategory.Recovery && it.category == ExerciseCategory.Mobility) }
             .filter { exercise -> exercise.equipment.any { it in checkIn.equipmentAvailable } || exercise.equipment.isEmpty() }
-            .filter { exercise -> checkIn.sorenessAreas.none { it in exercise.muscleGroups || it == MuscleGroup.FullBody } }
+            .filter { exercise -> avoidsSoreAreas(exercise, checkIn.sorenessAreas) }
             .filter { exercise -> checkIn.location != WorkoutLocation.WorkBreak || exercise.quietFriendly }
             .filter { exercise -> !checkIn.quietMode || exercise.quietFriendly }
+            .filter { exercise -> !checkIn.lowSweatMode || isLowSweatFriendly(exercise) }
             .filter { exercise -> !checkIn.crowdedGym || exercise.equipment.none { it.name in setOf("Barbell", "Bench") } }
             .filter { exercise -> when (checkIn.location) {
                 WorkoutLocation.Gym -> exercise.gym
@@ -102,6 +103,18 @@ class AdaptiveWorkoutGenerator(private val library: List<Exercise>) {
         candidates.forEach { if (result.size < target && it !in result) result.add(it) }
         return result
     }
+
+    private fun avoidsSoreAreas(exercise: Exercise, sorenessAreas: Set<MuscleGroup>): Boolean {
+        if (sorenessAreas.isEmpty()) return true
+        if (MuscleGroup.FullBody in sorenessAreas) return exercise.category == ExerciseCategory.Mobility || exercise.category == ExerciseCategory.Recovery
+        if (MuscleGroup.FullBody in exercise.muscleGroups) return false
+        return sorenessAreas.none { it in exercise.muscleGroups }
+    }
+
+    private fun isLowSweatFriendly(exercise: Exercise): Boolean =
+        exercise.category == ExerciseCategory.Mobility ||
+            exercise.category == ExerciseCategory.Recovery ||
+            exercise.id in setOf("easy-walk", "brisk-walk", "march-in-place", "treadmill-walk", "bike-easy")
 
     private fun prescription(checkIn: TodayCheckIn, exercise: Exercise): String = when (exercise.category) {
         ExerciseCategory.Cardio -> if (checkIn.timeAvailable <= 10) "4 rounds: 40 sec easy, 20 sec steady" else "8-20 min steady, conversational pace"

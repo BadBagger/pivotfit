@@ -3,14 +3,16 @@
 ## Repo
 
 - GitHub: `https://github.com/BadBagger/pivotfit`
-- Status: placeholder repository created for future SoftSmith app work
-- Android package: TBD
-- Latest APK release: none
+- Status: Android MVP source added
+- Android package: `com.pivotfit.app`
+- App scope: local-first adaptive workout app for real-life schedule, energy, equipment, soreness, and location changes
+- Latest APK release: none on GitHub Releases yet
+- Local APK artifact: `PivotFit-release.apk` may exist locally after build, but it is ignored by git
 
 ## DevHub
 
-PivotFit is not connected to the DevHub Android app yet because package name,
-icon, app scope, and APK release are not defined.
+PivotFit is not connected to the DevHub Android app yet because no GitHub
+Release with an APK asset exists and the store listing assets are not finalized.
 
 When those are defined, update the DevHub repo:
 
@@ -19,4 +21,3 @@ When those are defined, update the DevHub repo:
 - `android-app/app/src/main/java/com/softsmith/devhub/MainActivity.java`
 - Store icon and preview assets
 - DevHub `PROJECT_CONTEXT.md`
-

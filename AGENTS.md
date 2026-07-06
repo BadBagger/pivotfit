@@ -9,8 +9,8 @@ SoftSmith DevHub context:
 
 ## Publishing
 
-If PivotFit becomes an Android app, do not call it published until a GitHub
-Release exists with an APK asset attached.
+PivotFit is an Android app MVP. Do not call it published until a GitHub Release
+exists with an APK asset attached.
 
 Use GitHub CLI directly if it is not on PATH:
 
@@ -18,6 +18,5 @@ Use GitHub CLI directly if it is not on PATH:
 & 'C:\Program Files\GitHub CLI\gh.exe'
 ```
 
-Do not commit secrets, signing keys, keystores, Play Store credentials, or
-service account files.
-
+Do not commit secrets, signing keys, keystores, Play Store credentials, service
+account files, local APKs, or `local.properties`.

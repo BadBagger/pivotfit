@@ -8,7 +8,7 @@ This repository now contains the Android MVP source.
 
 - Package: `com.pivotfit.app`
 - Stack: Kotlin, Jetpack Compose, Material 3, Room, DataStore
-- Version: `0.1.1-adaptive-tests`, `versionCode = 2`
+- Version: `0.1.2-onboarding`, `versionCode = 3`
 - Local installer artifact: `PivotFit-release.apk` when built locally
 
 ## MVP Scope
@@ -19,6 +19,7 @@ This repository now contains the Android MVP source.
 - Local exercise library with 80+ original exercises.
 - Room history for completed workouts, exercise logs, pivots, soreness, notes, duration, and generated reason.
 - Progress, flexible plan, equipment, recovery, preferences, privacy, safety, and settings screens.
+- First-run onboarding for goal, experience, preferred length, equipment, beginner mode, quiet workouts, and low-sweat defaults.
 
 ## Build
 

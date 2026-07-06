@@ -6,7 +6,7 @@
 - Status: Android MVP source added
 - Android package: `com.pivotfit.app`
 - App scope: local-first adaptive workout app for real-life schedule, energy, equipment, soreness, and location changes
-- Latest APK release: `v0.1.1-adaptive-tests`
+- Latest APK release: `v0.1.2-onboarding`
 - Local APK artifact: `PivotFit-release.apk` may exist locally after build, but it is ignored by git
 
 ## DevHub

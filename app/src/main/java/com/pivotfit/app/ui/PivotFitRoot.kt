@@ -85,7 +85,7 @@ private enum class Screen(val label: String, val icon: ImageVector) {
 }
 
 private enum class SecondaryScreen {
-    Builder, Complete, Plan, Library, Equipment, Preferences, Recovery, History, Privacy, Safety, Detail
+    Builder, Complete, Plan, Library, Equipment, Preferences, Recovery, History, Privacy, Safety, Detail, Onboarding
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -94,6 +94,7 @@ fun PivotFitRoot(repository: PivotRepository) {
     val vm: PivotViewModel = viewModel(factory = PivotViewModel.Factory(repository))
     val state by vm.uiState.collectAsState()
     val profile by vm.profile.collectAsState()
+    val onboardingComplete by vm.onboardingComplete.collectAsState()
     val sessions by vm.sessions.collectAsState()
     val progress by vm.progress.collectAsState()
     var screen by rememberSaveable { mutableStateOf(Screen.Home.name) }
@@ -102,20 +103,28 @@ fun PivotFitRoot(repository: PivotRepository) {
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                Screen.entries.forEach { item ->
-                    NavigationBarItem(
-                        selected = screen == item.name && secondary == null,
-                        onClick = { screen = item.name; secondary = null },
-                        icon = { Icon(item.icon, item.label) },
-                        label = { Text(item.label) }
-                    )
+            if (onboardingComplete && secondary != SecondaryScreen.Onboarding.name) {
+                NavigationBar {
+                    Screen.entries.forEach { item ->
+                        NavigationBarItem(
+                            selected = screen == item.name && secondary == null,
+                            onClick = { screen = item.name; secondary = null },
+                            icon = { Icon(item.icon, item.label) },
+                            label = { Text(item.label) }
+                        )
+                    }
                 }
             }
         }
     ) { padding ->
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(padding)) {
-            when (secondary?.let { SecondaryScreen.valueOf(it) }) {
+            if (!onboardingComplete && secondary == null) {
+                OnboardingScreen(profile = profile, onComplete = { saved ->
+                    vm.completeOnboarding(saved)
+                    screen = Screen.Home.name
+                    secondary = null
+                })
+            } else when (secondary?.let { SecondaryScreen.valueOf(it) }) {
                 SecondaryScreen.Builder -> WorkoutBuilderScreen(state, onStart = { screen = Screen.Active.name; secondary = null }, onBack = { secondary = null })
                 SecondaryScreen.Complete -> WorkoutCompleteScreen(state, onSave = vm::completeWorkout, onHome = { screen = Screen.Home.name; secondary = null })
                 SecondaryScreen.Plan -> PlanScreen(profile, onSave = vm::saveProfile)
@@ -127,6 +136,11 @@ fun PivotFitRoot(repository: PivotRepository) {
                 SecondaryScreen.Privacy -> PrivacyScreen(onDeleteHistory = vm::deleteHistory)
                 SecondaryScreen.Safety -> SafetyScreen()
                 SecondaryScreen.Detail -> ExerciseDetailScreen(repository.exercises.firstOrNull { it.id == selectedExerciseId }, onBack = { secondary = SecondaryScreen.Library.name })
+                SecondaryScreen.Onboarding -> OnboardingScreen(profile = profile, onComplete = { saved ->
+                    vm.completeOnboarding(saved)
+                    screen = Screen.Home.name
+                    secondary = null
+                })
                 null -> when (Screen.valueOf(screen)) {
                     Screen.Home -> HomeScreen(
                         progress = progress,
@@ -156,11 +170,38 @@ fun PivotFitRoot(repository: PivotRepository) {
                         onPreferences = { secondary = SecondaryScreen.Preferences.name },
                         onPlan = { secondary = SecondaryScreen.Plan.name },
                         onPrivacy = { secondary = SecondaryScreen.Privacy.name },
-                        onSafety = { secondary = SecondaryScreen.Safety.name }
+                        onSafety = { secondary = SecondaryScreen.Safety.name },
+                        onOnboarding = { secondary = SecondaryScreen.Onboarding.name }
                     )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun OnboardingScreen(profile: UserProfile, onComplete: (UserProfile) -> Unit) {
+    var draft by remember(profile) { mutableStateOf(profile) }
+    ScreenList {
+        Text("Set your default plan", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        MessageCard("Real-life defaults", "PivotFit will use these as a starting point, then adapt each workout to the day you actually have.")
+        EnumChips("Main goal", FitnessGoal.entries.filter { it in listOf(FitnessGoal.Strength, FitnessGoal.Muscle, FitnessGoal.FatLoss, FitnessGoal.Endurance, FitnessGoal.GeneralHealth, FitnessGoal.Mobility) }, draft.goal, { it.label }) {
+            draft = draft.copy(goal = it)
+        }
+        EnumChips("Experience", ExperienceLevel.entries, draft.experienceLevel, { it.label }) {
+            draft = draft.copy(experienceLevel = it, beginnerMode = it == ExperienceLevel.Beginner)
+        }
+        ChipGroup("Preferred length", listOf(10, 20, 30, 45, 60), draft.preferredWorkoutLength, { "${it}m" }) {
+            draft = draft.copy(preferredWorkoutLength = it)
+        }
+        MultiEnumChips("Equipment you usually have", Equipment.entries, draft.availableEquipment, { it.label }) { selected ->
+            draft = draft.copy(availableEquipment = selected.ifEmpty { setOf(Equipment.Bodyweight) })
+        }
+        RowToggle("Beginner mode", draft.beginnerMode) { draft = draft.copy(beginnerMode = !draft.beginnerMode) }
+        RowToggle("Prefer quiet workouts", draft.quietWorkoutPreference) { draft = draft.copy(quietWorkoutPreference = !draft.quietWorkoutPreference) }
+        RowToggle("Prefer low-sweat options", draft.lowSweatPreference) { draft = draft.copy(lowSweatPreference = !draft.lowSweatPreference) }
+        RowToggle("Flexible weekly plan", draft.flexiblePlan) { draft = draft.copy(flexiblePlan = !draft.flexiblePlan) }
+        BigButton("Start using PivotFit") { onComplete(draft) }
     }
 }
 
@@ -425,9 +466,10 @@ private fun HistoryScreen(sessions: List<com.pivotfit.app.data.db.WorkoutSession
 }
 
 @Composable
-private fun SettingsScreen(onPreferences: () -> Unit, onPlan: () -> Unit, onPrivacy: () -> Unit, onSafety: () -> Unit) {
+private fun SettingsScreen(onPreferences: () -> Unit, onPlan: () -> Unit, onPrivacy: () -> Unit, onSafety: () -> Unit, onOnboarding: () -> Unit) {
     ScreenList {
         Text("Settings", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        QuickLink("Run onboarding", "Update goal, experience, equipment, and default workout preferences.", onOnboarding)
         QuickLink("Preferences", "Beginner mode, quiet workouts, low-sweat defaults.", onPreferences)
         QuickLink("Plan builder", "Flexible weekly targets and experience level.", onPlan)
         QuickLink("Privacy", "Local-first data controls.", onPrivacy)

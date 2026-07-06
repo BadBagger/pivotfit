@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.pivotfit.app.data.db.ExerciseLogEntity
 import com.pivotfit.app.data.db.WorkoutSessionEntity
 import com.pivotfit.app.data.models.Equipment
+import com.pivotfit.app.data.models.WorkoutLocation
 import com.pivotfit.app.data.models.GeneratedWorkout
 import com.pivotfit.app.data.models.RpeRating
 import com.pivotfit.app.data.models.TodayCheckIn
@@ -55,6 +56,7 @@ class PivotViewModel(private val repository: PivotRepository) : ViewModel() {
     val uiState: StateFlow<PivotUiState> = internal
 
     val profile: StateFlow<UserProfile> = repository.userProfile.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UserProfile())
+    val onboardingComplete: StateFlow<Boolean> = repository.onboardingComplete.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
     val sessions: StateFlow<List<WorkoutSessionEntity>> = repository.sessions.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val progress: StateFlow<ProgressSummary> = repository.sessions
         .combine(repository.userProfile) { sessions, _ -> scorer.summarize(sessions) }
@@ -65,6 +67,20 @@ class PivotViewModel(private val repository: PivotRepository) : ViewModel() {
     }
 
     fun saveProfile(profile: UserProfile) = viewModelScope.launch { repository.saveProfile(profile) }
+
+    fun completeOnboarding(profile: UserProfile) = viewModelScope.launch {
+        repository.completeOnboarding(profile)
+        internal.value = internal.value.copy(
+            checkIn = internal.value.checkIn.copy(
+                timeAvailable = profile.preferredWorkoutLength,
+                location = WorkoutLocation.Home,
+                goalToday = profile.goal,
+                equipmentAvailable = profile.availableEquipment,
+                quietMode = profile.quietWorkoutPreference,
+                lowSweatMode = profile.lowSweatPreference
+            )
+        )
+    }
 
     fun generateWorkout() {
         val workout = generator.generate(internal.value.checkIn, profile.value, sessions.value)

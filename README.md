@@ -8,7 +8,7 @@ This repository now contains the Android MVP source.
 
 - Package: `com.pivotfit.app`
 - Stack: Kotlin, Jetpack Compose, Material 3, Room, DataStore
-- Version: `0.1.9-time-slider`, `versionCode = 10`
+- Version: `0.1.10-checkin-refine`, `versionCode = 11`
 - Local installer artifact: `PivotFit-release.apk` when built locally
 
 ## MVP Scope
@@ -26,6 +26,7 @@ This repository now contains the Android MVP source.
 - Active workout screen has a cleaner set-based flow with a large Finish set button, visible set target, and rest timer.
 - Exercise images can be enlarged from the active workout and instruction cards for easier form checks.
 - Today Check-In uses a 5-60 minute slider for available workout time instead of fixed interval chips.
+- Today Check-In is refined into clearer cards with quick time controls, grouped context, and a plain-language workout summary.
 
 ## Build
 

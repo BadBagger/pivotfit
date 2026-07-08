@@ -27,8 +27,8 @@ android {
         applicationId = "com.pivotfit.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 10
-        versionName = "0.1.9-time-slider"
+        versionCode = 11
+        versionName = "0.1.10-checkin-refine"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

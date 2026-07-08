@@ -250,14 +250,26 @@ private fun TodayCheckInScreen(checkIn: TodayCheckIn, onUpdate: ((TodayCheckIn) 
     ScreenList {
         Text("What can you realistically do today?", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         TimeAvailableSlider(checkIn.timeAvailable) { time -> onUpdate { it.copy(timeAvailable = time) } }
-        EnumChips("Location", WorkoutLocation.entries, checkIn.location, { it.label }) { value -> onUpdate { it.copy(location = value) } }
-        EnumChips("Energy", EnergyLevel.entries, checkIn.energyLevel, { it.label }) { value -> onUpdate { it.copy(energyLevel = value) } }
-        MultiEnumChips("Sore areas", MuscleGroup.entries, checkIn.sorenessAreas, { it.label }) { value -> onUpdate { it.copy(sorenessAreas = value) } }
-        EnumChips("Goal today", FitnessGoal.entries.filter { it in listOf(FitnessGoal.Muscle, FitnessGoal.FatLoss, FitnessGoal.Mobility, FitnessGoal.Cardio, FitnessGoal.MaintainStreak, FitnessGoal.Recovery, FitnessGoal.Strength) }, checkIn.goalToday, { it.label }) { value -> onUpdate { it.copy(goalToday = value) } }
-        RowToggle("Gym is crowded", checkIn.crowdedGym) { onUpdate { it.copy(crowdedGym = !it.crowdedGym) } }
-        RowToggle("Quiet apartment mode", checkIn.quietMode) { onUpdate { it.copy(quietMode = !it.quietMode) } }
-        RowToggle("Low-sweat work break", checkIn.lowSweatMode) { onUpdate { it.copy(lowSweatMode = !it.lowSweatMode) } }
-        QuickLink("Equipment available", checkIn.equipmentAvailable.joinToString { it.label }, onEquipment)
+        CheckInSection("Today") {
+            CheckInChoiceChips(WorkoutLocation.entries, checkIn.location, { it.label }) { value -> onUpdate { it.copy(location = value) } }
+            CheckInChoiceChips(EnergyLevel.entries, checkIn.energyLevel, { it.label }) { value -> onUpdate { it.copy(energyLevel = value) } }
+        }
+        CheckInSection("Body check") {
+            MultiChoiceChips(MuscleGroup.entries, checkIn.sorenessAreas, { it.label }) { value -> onUpdate { it.copy(sorenessAreas = value) } }
+        }
+        CheckInSection("Goal") {
+            CheckInChoiceChips(FitnessGoal.entries.filter { it in listOf(FitnessGoal.Muscle, FitnessGoal.FatLoss, FitnessGoal.Mobility, FitnessGoal.Cardio, FitnessGoal.MaintainStreak, FitnessGoal.Recovery, FitnessGoal.Strength) }, checkIn.goalToday, { it.label }) { value -> onUpdate { it.copy(goalToday = value) } }
+        }
+        CheckInSection("Constraints") {
+            RowToggle("Gym is crowded", checkIn.crowdedGym) { onUpdate { it.copy(crowdedGym = !it.crowdedGym) } }
+            RowToggle("Quiet apartment mode", checkIn.quietMode) { onUpdate { it.copy(quietMode = !it.quietMode) } }
+            RowToggle("Low-sweat work break", checkIn.lowSweatMode) { onUpdate { it.copy(lowSweatMode = !it.lowSweatMode) } }
+            QuickLink("Equipment available", checkIn.equipmentAvailable.joinToString { it.label }, onEquipment)
+        }
+        MessageCard(
+            "Today's build",
+            "${checkIn.timeAvailable} min, ${checkIn.location.label.lowercase()}, ${checkIn.energyLevel.label.lowercase()} energy. Goal: ${checkIn.goalToday.label}."
+        )
         BigButton("Create workout", onBuild)
     }
 }
@@ -276,11 +288,30 @@ private fun TimeAvailableSlider(minutes: Int, onChange: (Int) -> Unit) {
                     onValueChange = { onChange(it.roundToInt().coerceIn(5, 60)) },
                     valueRange = 5f..60f
                 )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedButton(onClick = { onChange((minutes - 5).coerceAtLeast(5)) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp)) {
+                        Text("-5")
+                    }
+                    OutlinedButton(onClick = { onChange((minutes + 5).coerceAtMost(60)) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp)) {
+                        Text("+5")
+                    }
+                }
+                CheckInChoiceChips(listOf(10, 20, 30, 45), minutes, { "${it}m" }) { onChange(it) }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("5 min", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("60 min", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun CheckInSection(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Card(shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            SectionTitle(title)
+            content()
         }
     }
 }
@@ -951,11 +982,7 @@ private fun RowToggle(label: String, value: Boolean, onToggle: () -> Unit) {
 private fun <T> ChipGroup(title: String, values: List<T>, selected: T, label: (T) -> String, onSelect: (T) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionTitle(title)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            values.forEach { value ->
-                FilterChip(selected = value == selected, onClick = { onSelect(value) }, label = { Text(label(value)) })
-            }
-        }
+        CheckInChoiceChips(values, selected, label, onSelect)
     }
 }
 
@@ -968,14 +995,30 @@ private fun <T> EnumChips(title: String, values: List<T>, selected: T, label: (T
 private fun <T> MultiEnumChips(title: String, values: List<T>, selected: Set<T>, label: (T) -> String, onSelect: (Set<T>) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionTitle(title)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            values.forEach { value ->
-                FilterChip(
-                    selected = value in selected,
-                    onClick = { onSelect(if (value in selected) selected - value else selected + value) },
-                    label = { Text(label(value)) }
-                )
-            }
+        MultiChoiceChips(values, selected, label, onSelect)
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun <T> CheckInChoiceChips(values: List<T>, selected: T, label: (T) -> String, onSelect: (T) -> Unit) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        values.forEach { value ->
+            FilterChip(selected = value == selected, onClick = { onSelect(value) }, label = { Text(label(value)) })
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun <T> MultiChoiceChips(values: List<T>, selected: Set<T>, label: (T) -> String, onSelect: (Set<T>) -> Unit) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        values.forEach { value ->
+            FilterChip(
+                selected = value in selected,
+                onClick = { onSelect(if (value in selected) selected - value else selected + value) },
+                label = { Text(label(value)) }
+            )
         }
     }
 }

@@ -8,7 +8,7 @@ This repository now contains the Android MVP source.
 
 - Package: `com.pivotfit.app`
 - Stack: Kotlin, Jetpack Compose, Material 3, Room, DataStore
-- Version: `0.1.6-generated-guidance`, `versionCode = 7`
+- Version: `0.1.7-rest-timer-ui`, `versionCode = 8`
 - Local installer artifact: `PivotFit-release.apk` when built locally
 
 ## MVP Scope
@@ -23,6 +23,7 @@ This repository now contains the Android MVP source.
 - Workout completion summary with exercises completed, pivots, skipped exercises, soreness flags, minutes, RPE, and next recommendation.
 - App icon refreshed from supplied artwork with outer background removed.
 - Active workouts and exercise details include instructions, common mistakes, and generated visual guidance for every exercise through specific, family-specific, and movement-pattern image assets.
+- Active workout screen has a cleaner set-based flow with a large Finish set button, visible set target, and rest timer.
 
 ## Build
 

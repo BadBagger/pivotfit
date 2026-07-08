@@ -46,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -77,6 +78,7 @@ import com.pivotfit.app.data.models.WorkoutLocation
 import com.pivotfit.app.data.repositories.PivotRepository
 import com.pivotfit.app.domain.substitutions.PivotReason
 import com.pivotfit.app.R
+import kotlinx.coroutines.delay
 import java.text.DateFormat
 import java.util.Date
 
@@ -290,41 +292,83 @@ private fun ActiveWorkoutScreen(
     var pain by remember { mutableStateOf(false) }
     var rpe by remember { mutableStateOf(RpeRating.Good) }
     val current = state.activeExercises.getOrNull(state.currentExerciseIndex)
+    var setNumber by rememberSaveable { mutableStateOf(1) }
+    var restRemaining by rememberSaveable { mutableStateOf(0) }
+    val totalSets = current?.workoutExercise?.prescription?.let(::setCountFromPrescription) ?: 1
+    val isResting = restRemaining > 0
+
+    LaunchedEffect(state.currentExerciseIndex, current?.workoutExercise?.exercise?.id) {
+        setNumber = 1
+        restRemaining = 0
+        pain = false
+        rpe = RpeRating.Good
+    }
+    LaunchedEffect(restRemaining) {
+        if (restRemaining > 0) {
+            delay(1_000)
+            restRemaining -= 1
+        }
+    }
+
     ScreenList {
         if (current == null) {
             MessageCard("Ready when you are", "Build a workout from today's check-in.")
             return@ScreenList
         }
-        Text("Active workout", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        LinearProgressIndicator(
-            progress = { state.activeExercises.count { it.done }.toFloat() / state.activeExercises.size.coerceAtLeast(1) },
-            modifier = Modifier.fillMaxWidth().height(10.dp)
+        ActiveWorkoutHeader(state)
+        ActiveExerciseHero(
+            exercise = current.workoutExercise.exercise,
+            prescription = current.workoutExercise.prescription,
+            setNumber = setNumber,
+            totalSets = totalSets,
+            restSeconds = current.workoutExercise.restSeconds
         )
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), shape = RoundedCornerShape(8.dp)) {
-            Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Icon(Icons.Default.FitnessCenter, null, modifier = Modifier.size(54.dp), tint = MaterialTheme.colorScheme.primary)
-                Text(current.workoutExercise.exercise.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
-                Text(current.workoutExercise.prescription, style = MaterialTheme.typography.titleLarge)
-                Text("Rest ${current.workoutExercise.restSeconds}s after the set.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+        if (isResting) {
+            RestTimerCard(
+                remainingSeconds = restRemaining,
+                onSkipRest = { restRemaining = 0 }
+            )
         }
-        ExerciseGuidanceCard(current.workoutExercise.exercise)
         EnumChips("How did it feel?", RpeRating.entries, rpe, { it.label }) { rpe = it }
         RowToggle("Pain or discomfort", pain) { pain = !pain }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Button(onClick = { onDone(rpe, pain); pain = false; rpe = RpeRating.Good }, modifier = Modifier.weight(1f).height(58.dp)) {
-                Text("Done")
-            }
-            OutlinedButton(onClick = onSkip, modifier = Modifier.weight(1f).height(58.dp)) { Text("Skip") }
-        }
         Button(
-            onClick = { pivotOpen = true },
-            modifier = Modifier.fillMaxWidth().height(58.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-        ) { Text("Pivot") }
-        if (state.activeExercises.all { it.done } || state.currentExerciseIndex == state.activeExercises.lastIndex) {
-            OutlinedButton(onClick = onComplete, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Finish workout") }
+            enabled = !isResting && !current.done,
+            onClick = {
+                if (setNumber < totalSets) {
+                    setNumber += 1
+                    restRemaining = current.workoutExercise.restSeconds
+                } else {
+                    onDone(rpe, pain)
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(64.dp),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Text(
+                when {
+                    current.done -> "Exercise complete"
+                    setNumber < totalSets -> "Finish set"
+                    else -> "Finish exercise"
+                },
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
         }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            OutlinedButton(onClick = onSkip, modifier = Modifier.weight(1f).height(54.dp), shape = RoundedCornerShape(8.dp)) {
+                Text("Skip")
+            }
+            Button(
+                onClick = { pivotOpen = true },
+                modifier = Modifier.weight(1f).height(54.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+            ) { Text("Pivot") }
+        }
+        if (state.activeExercises.all { it.done } || state.currentExerciseIndex == state.activeExercises.lastIndex) {
+            OutlinedButton(onClick = onComplete, modifier = Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(8.dp)) { Text("Finish workout") }
+        }
+        ExerciseGuidanceCard(current.workoutExercise.exercise)
         SectionTitle("Workout list")
         state.activeExercises.forEachIndexed { index, item ->
             AssistChip(
@@ -348,6 +392,97 @@ private fun ActiveWorkoutScreen(
             confirmButton = { TextButton(onClick = { pivotOpen = false }) { Text("Close") } }
         )
     }
+}
+
+@Composable
+private fun ActiveWorkoutHeader(state: PivotUiState) {
+    val completed = state.activeExercises.count { it.done }
+    val total = state.activeExercises.size.coerceAtLeast(1)
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
+            Column {
+                Text("Active workout", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
+                Text("$completed of $total exercises complete", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Text("${((completed.toFloat() / total) * 100).toInt()}%", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+        }
+        LinearProgressIndicator(
+            progress = { completed.toFloat() / total },
+            modifier = Modifier.fillMaxWidth().height(8.dp)
+        )
+    }
+}
+
+@Composable
+private fun ActiveExerciseHero(
+    exercise: Exercise,
+    prescription: String,
+    setNumber: Int,
+    totalSets: Int,
+    restSeconds: Int
+) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(8.dp)) {
+        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Image(
+                painter = painterResource(exerciseGuidanceImageRes(exercise)),
+                contentDescription = "${exercise.name} form example",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+            )
+            Text(exercise.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MiniStat("Set", "$setNumber/$totalSets", Modifier.weight(1f))
+                MiniStat("Target", prescription, Modifier.weight(1.35f))
+                MiniStat("Rest", "${restSeconds}s", Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun RestTimerCard(remainingSeconds: Int, onSkipRest: () -> Unit) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary), shape = RoundedCornerShape(8.dp)) {
+        Row(
+            Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text("Rest", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+                Text(formatSeconds(remainingSeconds), color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Black)
+            }
+            OutlinedButton(onClick = onSkipRest, shape = RoundedCornerShape(8.dp)) { Text("Skip rest") }
+        }
+    }
+}
+
+@Composable
+private fun MiniStat(label: String, value: String, modifier: Modifier = Modifier) {
+    Card(shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), modifier = modifier) {
+        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
+            Text(value, fontWeight = FontWeight.Bold, maxLines = 2)
+        }
+    }
+}
+
+private fun setCountFromPrescription(prescription: String): Int =
+    Regex("""(\d+)\s+sets?""", RegexOption.IGNORE_CASE)
+        .find(prescription)
+        ?.groupValues
+        ?.getOrNull(1)
+        ?.toIntOrNull()
+        ?.coerceIn(1, 8)
+        ?: 1
+
+private fun formatSeconds(seconds: Int): String {
+    val minutes = seconds / 60
+    val remainder = seconds % 60
+    return "$minutes:${remainder.toString().padStart(2, '0')}"
 }
 
 @Composable

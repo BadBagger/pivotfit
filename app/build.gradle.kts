@@ -27,8 +27,8 @@ android {
         applicationId = "com.pivotfit.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 8
-        versionName = "0.1.7-rest-timer-ui"
+        versionCode = 9
+        versionName = "0.1.8-image-zoom"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

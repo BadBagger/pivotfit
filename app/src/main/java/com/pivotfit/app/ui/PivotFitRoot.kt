@@ -1,6 +1,7 @@
 package com.pivotfit.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Arrangement
@@ -61,6 +62,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pivotfit.app.data.models.Difficulty
 import com.pivotfit.app.data.models.EnergyLevel
@@ -423,16 +426,7 @@ private fun ActiveExerciseHero(
 ) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(8.dp)) {
         Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Image(
-                painter = painterResource(exerciseGuidanceImageRes(exercise)),
-                contentDescription = "${exercise.name} form example",
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
-                    .padding(8.dp)
-            )
+            ZoomableExerciseImage(exercise = exercise, heightDp = 220)
             Text(exercise.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 MiniStat("Set", "$setNumber/$totalSets", Modifier.weight(1f))
@@ -490,7 +484,7 @@ private fun ExerciseGuidanceCard(exercise: Exercise) {
     Card(shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("How to do this", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-            ExerciseGuidanceImage(exercise)
+            ZoomableExerciseImage(exercise = exercise, heightDp = 240)
             exerciseSteps(exercise).forEachIndexed { index, step ->
                 Text("${index + 1}. $step", color = MaterialTheme.colorScheme.onSurface)
             }
@@ -501,17 +495,63 @@ private fun ExerciseGuidanceCard(exercise: Exercise) {
 }
 
 @Composable
-private fun ExerciseGuidanceImage(exercise: Exercise) {
-    Image(
-        painter = painterResource(exerciseGuidanceImageRes(exercise)),
-        contentDescription = "${exercise.name} form example",
-        contentScale = ContentScale.Fit,
+private fun ZoomableExerciseImage(exercise: Exercise, heightDp: Int) {
+    var expanded by remember { mutableStateOf(false) }
+    val imageRes = exerciseGuidanceImageRes(exercise)
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(220.dp)
+            .height(heightDp.dp)
             .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
-            .padding(12.dp)
-    )
+            .clickable { expanded = true }
+            .padding(8.dp)
+    ) {
+        Image(
+            painter = painterResource(imageRes),
+            contentDescription = "${exercise.name} form example",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize()
+        )
+        Text(
+            "View larger",
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .background(MaterialTheme.colorScheme.background, RoundedCornerShape(8.dp))
+                .padding(horizontal = 10.dp, vertical = 6.dp)
+        )
+    }
+    if (expanded) {
+        Dialog(
+            onDismissRequest = { expanded = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Card(
+                shape = RoundedCornerShape(8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                modifier = Modifier.fillMaxSize().padding(12.dp)
+            ) {
+                Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(exercise.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Image(
+                        painter = painterResource(imageRes),
+                        contentDescription = "${exercise.name} enlarged form example",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+                            .padding(8.dp)
+                    )
+                    OutlinedButton(onClick = { expanded = false }, modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(8.dp)) {
+                        Text("Close")
+                    }
+                }
+            }
+        }
+    }
 }
 
 private fun exerciseGuidanceImageRes(exercise: Exercise): Int =

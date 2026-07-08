@@ -1,6 +1,7 @@
 package com.pivotfit.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,7 +54,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -66,6 +71,7 @@ import com.pivotfit.app.data.models.ExerciseCategory
 import com.pivotfit.app.data.models.ExperienceLevel
 import com.pivotfit.app.data.models.FitnessGoal
 import com.pivotfit.app.data.models.MuscleGroup
+import com.pivotfit.app.data.models.MovementPattern
 import com.pivotfit.app.data.models.RpeRating
 import com.pivotfit.app.data.models.TodayCheckIn
 import com.pivotfit.app.data.models.UserProfile
@@ -303,6 +309,7 @@ private fun ActiveWorkoutScreen(
                 Text("Rest ${current.workoutExercise.restSeconds}s after the set.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
+        ExerciseGuidanceCard(current.workoutExercise.exercise)
         EnumChips("How did it feel?", RpeRating.entries, rpe, { it.label }) { rpe = it }
         RowToggle("Pain or discomfort", pain) { pain = !pain }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -343,6 +350,144 @@ private fun ActiveWorkoutScreen(
         )
     }
 }
+
+@Composable
+private fun ExerciseGuidanceCard(exercise: Exercise) {
+    Card(shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("How to do this", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            MovementDiagram(exercise)
+            exerciseSteps(exercise).forEachIndexed { index, step ->
+                Text("${index + 1}. $step", color = MaterialTheme.colorScheme.onSurface)
+            }
+            Text("Watch for: ${exerciseMistakes(exercise)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Stop if you feel sharp pain. Pivot to an easier option if this does not feel right.", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun MovementDiagram(exercise: Exercise) {
+    val primary = MaterialTheme.colorScheme.primary
+    val secondary = MaterialTheme.colorScheme.secondary
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(140.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+            .padding(12.dp)
+    ) {
+        val w = size.width
+        val h = size.height
+        fun line(a: Offset, b: Offset, color: Color = primary, width: Float = 8f) =
+            drawLine(color, a, b, strokeWidth = width, cap = StrokeCap.Round)
+        fun joint(center: Offset, color: Color = secondary, radius: Float = 9f) =
+            drawCircle(color, radius, center)
+
+        when (exercise.movementPattern) {
+            MovementPattern.Push -> {
+                line(Offset(w * .22f, h * .62f), Offset(w * .78f, h * .62f))
+                line(Offset(w * .34f, h * .62f), Offset(w * .28f, h * .88f), muted, 5f)
+                line(Offset(w * .66f, h * .62f), Offset(w * .72f, h * .88f), muted, 5f)
+                line(Offset(w * .42f, h * .50f), Offset(w * .42f, h * .78f), secondary, 5f)
+                line(Offset(w * .58f, h * .78f), Offset(w * .58f, h * .50f), secondary, 5f)
+                joint(Offset(w * .18f, h * .60f))
+            }
+            MovementPattern.Pull -> {
+                line(Offset(w * .18f, h * .28f), Offset(w * .82f, h * .28f), muted, 5f)
+                line(Offset(w * .38f, h * .30f), Offset(w * .38f, h * .72f))
+                line(Offset(w * .62f, h * .30f), Offset(w * .62f, h * .72f))
+                line(Offset(w * .38f, h * .72f), Offset(w * .50f, h * .90f), secondary, 5f)
+                line(Offset(w * .62f, h * .72f), Offset(w * .50f, h * .90f), secondary, 5f)
+                joint(Offset(w * .50f, h * .88f))
+            }
+            MovementPattern.Squat, MovementPattern.Lunge -> {
+                line(Offset(w * .50f, h * .22f), Offset(w * .50f, h * .52f))
+                line(Offset(w * .50f, h * .52f), Offset(w * .36f, h * .82f), secondary)
+                line(Offset(w * .50f, h * .52f), Offset(w * .66f, h * .82f), secondary)
+                line(Offset(w * .36f, h * .82f), Offset(w * .25f, h * .88f), muted, 5f)
+                line(Offset(w * .66f, h * .82f), Offset(w * .78f, h * .88f), muted, 5f)
+                joint(Offset(w * .50f, h * .18f))
+            }
+            MovementPattern.Hinge -> {
+                line(Offset(w * .35f, h * .25f), Offset(w * .58f, h * .52f))
+                line(Offset(w * .58f, h * .52f), Offset(w * .48f, h * .88f), secondary)
+                line(Offset(w * .58f, h * .52f), Offset(w * .74f, h * .86f), secondary)
+                line(Offset(w * .42f, h * .55f), Offset(w * .25f, h * .76f), muted, 5f)
+                joint(Offset(w * .32f, h * .22f))
+            }
+            MovementPattern.Carry -> {
+                line(Offset(w * .50f, h * .22f), Offset(w * .50f, h * .72f))
+                line(Offset(w * .36f, h * .42f), Offset(w * .64f, h * .42f), secondary)
+                line(Offset(w * .36f, h * .42f), Offset(w * .32f, h * .72f), muted, 5f)
+                line(Offset(w * .64f, h * .42f), Offset(w * .68f, h * .72f), muted, 5f)
+                line(Offset(w * .45f, h * .72f), Offset(w * .38f, h * .92f))
+                line(Offset(w * .55f, h * .72f), Offset(w * .62f, h * .92f))
+                joint(Offset(w * .50f, h * .18f))
+            }
+            MovementPattern.Core -> {
+                line(Offset(w * .18f, h * .62f), Offset(w * .82f, h * .62f))
+                line(Offset(w * .28f, h * .62f), Offset(w * .22f, h * .86f), secondary, 5f)
+                line(Offset(w * .72f, h * .62f), Offset(w * .80f, h * .86f), secondary, 5f)
+                joint(Offset(w * .16f, h * .60f))
+                line(Offset(w * .25f, h * .38f), Offset(w * .75f, h * .38f), muted, 3f)
+            }
+            MovementPattern.Cardio -> {
+                joint(Offset(w * .32f, h * .24f))
+                line(Offset(w * .32f, h * .34f), Offset(w * .42f, h * .62f))
+                line(Offset(w * .42f, h * .62f), Offset(w * .28f, h * .88f), secondary)
+                line(Offset(w * .42f, h * .62f), Offset(w * .62f, h * .86f), secondary)
+                line(Offset(w * .38f, h * .45f), Offset(w * .62f, h * .35f), muted, 5f)
+                drawArc(primary, startAngle = 200f, sweepAngle = 220f, useCenter = false, topLeft = Offset(w * .58f, h * .26f), size = Size(w * .20f, h * .38f), style = Stroke(width = 5f, cap = StrokeCap.Round))
+            }
+            MovementPattern.Mobility -> {
+                drawCircle(primary, radius = h * .26f, center = Offset(w * .50f, h * .55f), style = Stroke(width = 7f, cap = StrokeCap.Round))
+                line(Offset(w * .50f, h * .20f), Offset(w * .50f, h * .90f), secondary, 5f)
+                line(Offset(w * .25f, h * .55f), Offset(w * .75f, h * .55f), secondary, 5f)
+                joint(Offset(w * .50f, h * .55f), radius = 7f)
+            }
+        }
+    }
+}
+
+private fun exerciseSteps(exercise: Exercise): List<String> =
+    when (exercise.id) {
+        "bear-crawl-hold" -> listOf(
+            "Start on hands and knees with hands under shoulders and knees under hips.",
+            "Brace your stomach, then lift knees one or two inches off the floor.",
+            "Keep your back flat and hips quiet. Hold while breathing slowly."
+        )
+        "db-reverse-fly" -> listOf(
+            "Hinge forward with a long back and soft knees.",
+            "Let the dumbbells hang under your shoulders, palms facing each other.",
+            "Raise arms out wide until your upper back works, then lower with control."
+        )
+        else -> when (exercise.movementPattern) {
+            MovementPattern.Push -> listOf("Set hands or handles steady before you start.", "Brace your core and lower with control.", "Press away smoothly without shrugging your shoulders.")
+            MovementPattern.Pull -> listOf("Start tall with shoulders down, not shrugged.", "Pull elbows toward your ribs or hips.", "Pause briefly, then return slowly without yanking.")
+            MovementPattern.Squat -> listOf("Stand with feet planted and ribs stacked over hips.", "Sit down and back as knees track over toes.", "Push through the floor to stand tall without bouncing.")
+            MovementPattern.Hinge -> listOf("Soften knees and push hips back.", "Keep your back long and weight close to your body.", "Squeeze glutes to stand tall without leaning back.")
+            MovementPattern.Lunge -> listOf("Start tall and step into a stable stance.", "Lower until both legs feel controlled.", "Drive through the front foot and keep your torso steady.")
+            MovementPattern.Carry -> listOf("Stand tall with weight held firmly.", "Keep ribs down, shoulders level, and steps quiet.", "Walk slowly or hold position without leaning.")
+            MovementPattern.Core -> listOf("Brace your midsection before moving.", "Keep ribs and hips from twisting or sagging.", "Use slow breaths and stop before form breaks.")
+            MovementPattern.Cardio -> listOf("Start easier than you think you need.", "Keep breathing steady and posture relaxed.", "Increase pace only if it still feels controlled.")
+            MovementPattern.Mobility -> listOf("Move into a gentle range, not a painful stretch.", "Breathe slowly and keep the motion smooth.", "Back off if your body guards or pinches.")
+        }
+    }
+
+private fun exerciseMistakes(exercise: Exercise): String =
+    when (exercise.movementPattern) {
+        MovementPattern.Push -> "shrugging, flaring elbows hard, or rushing the lower."
+        MovementPattern.Pull -> "jerking the weight, rounding forward, or pulling with the neck."
+        MovementPattern.Squat -> "knees collapsing in, heels lifting, or dropping faster than you can control."
+        MovementPattern.Hinge -> "rounding your back, squatting instead of hinging, or letting weight drift away."
+        MovementPattern.Lunge -> "wobbling through reps, front knee caving in, or pushing through pain."
+        MovementPattern.Carry -> "leaning to one side, holding your breath, or rushing steps."
+        MovementPattern.Core -> "hips sagging, breath holding, or turning the hold into a strain."
+        MovementPattern.Cardio -> "starting too hard, stomping, or ignoring discomfort."
+        MovementPattern.Mobility -> "forcing range, bouncing, or stretching through sharp pain."
+    }
 
 @Composable
 private fun WorkoutCompleteScreen(state: PivotUiState, onSave: (RpeRating, String, Boolean) -> Unit, onHome: () -> Unit) {
@@ -461,8 +606,7 @@ private fun ExerciseDetailScreen(exercise: Exercise?, onBack: () -> Unit) {
             StatRow("Difficulty", exercise.difficulty.label)
             StatRow("Muscles", exercise.muscleGroups.joinToString { it.label })
             StatRow("Equipment", exercise.equipment.joinToString { it.label })
-            MessageCard("Instructions", exercise.instructions)
-            MessageCard("Common mistakes", exercise.commonMistakes)
+            ExerciseGuidanceCard(exercise)
             MessageCard("Alternatives", "Use the Pivot button if this is too hard, too easy, unavailable, or uncomfortable.")
         }
         OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Back") }

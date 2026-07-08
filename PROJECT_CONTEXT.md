@@ -6,8 +6,12 @@
 - Status: Android MVP source added
 - Android package: `com.pivotfit.app`
 - App scope: local-first adaptive workout app for real-life schedule, energy, equipment, soreness, and location changes
-- Latest APK release: `v0.1.5-exercise-guidance`
+- Latest APK release: `v0.1.6-generated-guidance`
 - Local APK artifact: `PivotFit-release.apk` may exist locally after build, but it is ignored by git
+
+## Recent Updates
+
+- `v0.1.6-generated-guidance` replaces the abstract movement diagrams with generated exercise visual assets, including clearer bear crawl and squat examples plus movement-pattern fallbacks for every workout.
 
 ## DevHub
 

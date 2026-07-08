@@ -1,7 +1,7 @@
 package com.pivotfit.app.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -54,12 +54,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -78,6 +76,7 @@ import com.pivotfit.app.data.models.UserProfile
 import com.pivotfit.app.data.models.WorkoutLocation
 import com.pivotfit.app.data.repositories.PivotRepository
 import com.pivotfit.app.domain.substitutions.PivotReason
+import com.pivotfit.app.R
 import java.text.DateFormat
 import java.util.Date
 
@@ -356,7 +355,7 @@ private fun ExerciseGuidanceCard(exercise: Exercise) {
     Card(shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("How to do this", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-            MovementDiagram(exercise)
+            ExerciseGuidanceImage(exercise)
             exerciseSteps(exercise).forEachIndexed { index, step ->
                 Text("${index + 1}. $step", color = MaterialTheme.colorScheme.onSurface)
             }
@@ -367,89 +366,35 @@ private fun ExerciseGuidanceCard(exercise: Exercise) {
 }
 
 @Composable
-private fun MovementDiagram(exercise: Exercise) {
-    val primary = MaterialTheme.colorScheme.primary
-    val secondary = MaterialTheme.colorScheme.secondary
-    val muted = MaterialTheme.colorScheme.onSurfaceVariant
-    Canvas(
+private fun ExerciseGuidanceImage(exercise: Exercise) {
+    Image(
+        painter = painterResource(exerciseGuidanceImageRes(exercise)),
+        contentDescription = "${exercise.name} form example",
+        contentScale = ContentScale.Fit,
         modifier = Modifier
             .fillMaxWidth()
-            .height(140.dp)
+            .height(220.dp)
             .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
             .padding(12.dp)
-    ) {
-        val w = size.width
-        val h = size.height
-        fun line(a: Offset, b: Offset, color: Color = primary, width: Float = 8f) =
-            drawLine(color, a, b, strokeWidth = width, cap = StrokeCap.Round)
-        fun joint(center: Offset, color: Color = secondary, radius: Float = 9f) =
-            drawCircle(color, radius, center)
+    )
+}
 
-        when (exercise.movementPattern) {
-            MovementPattern.Push -> {
-                line(Offset(w * .22f, h * .62f), Offset(w * .78f, h * .62f))
-                line(Offset(w * .34f, h * .62f), Offset(w * .28f, h * .88f), muted, 5f)
-                line(Offset(w * .66f, h * .62f), Offset(w * .72f, h * .88f), muted, 5f)
-                line(Offset(w * .42f, h * .50f), Offset(w * .42f, h * .78f), secondary, 5f)
-                line(Offset(w * .58f, h * .78f), Offset(w * .58f, h * .50f), secondary, 5f)
-                joint(Offset(w * .18f, h * .60f))
-            }
-            MovementPattern.Pull -> {
-                line(Offset(w * .18f, h * .28f), Offset(w * .82f, h * .28f), muted, 5f)
-                line(Offset(w * .38f, h * .30f), Offset(w * .38f, h * .72f))
-                line(Offset(w * .62f, h * .30f), Offset(w * .62f, h * .72f))
-                line(Offset(w * .38f, h * .72f), Offset(w * .50f, h * .90f), secondary, 5f)
-                line(Offset(w * .62f, h * .72f), Offset(w * .50f, h * .90f), secondary, 5f)
-                joint(Offset(w * .50f, h * .88f))
-            }
-            MovementPattern.Squat, MovementPattern.Lunge -> {
-                line(Offset(w * .50f, h * .22f), Offset(w * .50f, h * .52f))
-                line(Offset(w * .50f, h * .52f), Offset(w * .36f, h * .82f), secondary)
-                line(Offset(w * .50f, h * .52f), Offset(w * .66f, h * .82f), secondary)
-                line(Offset(w * .36f, h * .82f), Offset(w * .25f, h * .88f), muted, 5f)
-                line(Offset(w * .66f, h * .82f), Offset(w * .78f, h * .88f), muted, 5f)
-                joint(Offset(w * .50f, h * .18f))
-            }
-            MovementPattern.Hinge -> {
-                line(Offset(w * .35f, h * .25f), Offset(w * .58f, h * .52f))
-                line(Offset(w * .58f, h * .52f), Offset(w * .48f, h * .88f), secondary)
-                line(Offset(w * .58f, h * .52f), Offset(w * .74f, h * .86f), secondary)
-                line(Offset(w * .42f, h * .55f), Offset(w * .25f, h * .76f), muted, 5f)
-                joint(Offset(w * .32f, h * .22f))
-            }
-            MovementPattern.Carry -> {
-                line(Offset(w * .50f, h * .22f), Offset(w * .50f, h * .72f))
-                line(Offset(w * .36f, h * .42f), Offset(w * .64f, h * .42f), secondary)
-                line(Offset(w * .36f, h * .42f), Offset(w * .32f, h * .72f), muted, 5f)
-                line(Offset(w * .64f, h * .42f), Offset(w * .68f, h * .72f), muted, 5f)
-                line(Offset(w * .45f, h * .72f), Offset(w * .38f, h * .92f))
-                line(Offset(w * .55f, h * .72f), Offset(w * .62f, h * .92f))
-                joint(Offset(w * .50f, h * .18f))
-            }
-            MovementPattern.Core -> {
-                line(Offset(w * .18f, h * .62f), Offset(w * .82f, h * .62f))
-                line(Offset(w * .28f, h * .62f), Offset(w * .22f, h * .86f), secondary, 5f)
-                line(Offset(w * .72f, h * .62f), Offset(w * .80f, h * .86f), secondary, 5f)
-                joint(Offset(w * .16f, h * .60f))
-                line(Offset(w * .25f, h * .38f), Offset(w * .75f, h * .38f), muted, 3f)
-            }
-            MovementPattern.Cardio -> {
-                joint(Offset(w * .32f, h * .24f))
-                line(Offset(w * .32f, h * .34f), Offset(w * .42f, h * .62f))
-                line(Offset(w * .42f, h * .62f), Offset(w * .28f, h * .88f), secondary)
-                line(Offset(w * .42f, h * .62f), Offset(w * .62f, h * .86f), secondary)
-                line(Offset(w * .38f, h * .45f), Offset(w * .62f, h * .35f), muted, 5f)
-                drawArc(primary, startAngle = 200f, sweepAngle = 220f, useCenter = false, topLeft = Offset(w * .58f, h * .26f), size = Size(w * .20f, h * .38f), style = Stroke(width = 5f, cap = StrokeCap.Round))
-            }
-            MovementPattern.Mobility -> {
-                drawCircle(primary, radius = h * .26f, center = Offset(w * .50f, h * .55f), style = Stroke(width = 7f, cap = StrokeCap.Round))
-                line(Offset(w * .50f, h * .20f), Offset(w * .50f, h * .90f), secondary, 5f)
-                line(Offset(w * .25f, h * .55f), Offset(w * .75f, h * .55f), secondary, 5f)
-                joint(Offset(w * .50f, h * .55f), radius = 7f)
-            }
+private fun exerciseGuidanceImageRes(exercise: Exercise): Int =
+    when (exercise.id) {
+        "bear-crawl-hold" -> R.drawable.exercise_bear_crawl
+        "bodyweight-squat" -> R.drawable.exercise_squat
+        else -> when (exercise.movementPattern) {
+            MovementPattern.Push -> R.drawable.exercise_push
+            MovementPattern.Pull -> R.drawable.exercise_pull
+            MovementPattern.Squat -> R.drawable.exercise_squat
+            MovementPattern.Hinge -> R.drawable.exercise_hinge
+            MovementPattern.Lunge -> R.drawable.exercise_lunge
+            MovementPattern.Carry -> R.drawable.exercise_carry
+            MovementPattern.Core -> R.drawable.exercise_bear_crawl
+            MovementPattern.Cardio -> R.drawable.exercise_cardio
+            MovementPattern.Mobility -> R.drawable.exercise_mobility
         }
     }
-}
 
 private fun exerciseSteps(exercise: Exercise): List<String> =
     when (exercise.id) {

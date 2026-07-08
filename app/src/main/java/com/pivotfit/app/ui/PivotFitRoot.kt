@@ -42,6 +42,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -84,6 +85,7 @@ import com.pivotfit.app.R
 import kotlinx.coroutines.delay
 import java.text.DateFormat
 import java.util.Date
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalLayoutApi::class)
 private enum class Screen(val label: String, val icon: ImageVector) {
@@ -247,7 +249,7 @@ private fun HomeScreen(
 private fun TodayCheckInScreen(checkIn: TodayCheckIn, onUpdate: ((TodayCheckIn) -> TodayCheckIn) -> Unit, onBuild: () -> Unit, onEquipment: () -> Unit) {
     ScreenList {
         Text("What can you realistically do today?", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        ChipGroup("Time", listOf(5, 10, 20, 30, 45, 60), checkIn.timeAvailable, { it.toString() }) { time -> onUpdate { it.copy(timeAvailable = time) } }
+        TimeAvailableSlider(checkIn.timeAvailable) { time -> onUpdate { it.copy(timeAvailable = time) } }
         EnumChips("Location", WorkoutLocation.entries, checkIn.location, { it.label }) { value -> onUpdate { it.copy(location = value) } }
         EnumChips("Energy", EnergyLevel.entries, checkIn.energyLevel, { it.label }) { value -> onUpdate { it.copy(energyLevel = value) } }
         MultiEnumChips("Sore areas", MuscleGroup.entries, checkIn.sorenessAreas, { it.label }) { value -> onUpdate { it.copy(sorenessAreas = value) } }
@@ -257,6 +259,29 @@ private fun TodayCheckInScreen(checkIn: TodayCheckIn, onUpdate: ((TodayCheckIn) 
         RowToggle("Low-sweat work break", checkIn.lowSweatMode) { onUpdate { it.copy(lowSweatMode = !it.lowSweatMode) } }
         QuickLink("Equipment available", checkIn.equipmentAvailable.joinToString { it.label }, onEquipment)
         BigButton("Create workout", onBuild)
+    }
+}
+
+@Composable
+private fun TimeAvailableSlider(minutes: Int, onChange: (Int) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
+            SectionTitle("Time")
+            Text("$minutes min", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+        }
+        Card(shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Slider(
+                    value = minutes.toFloat().coerceIn(5f, 60f),
+                    onValueChange = { onChange(it.roundToInt().coerceIn(5, 60)) },
+                    valueRange = 5f..60f
+                )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("5 min", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("60 min", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
     }
 }
 

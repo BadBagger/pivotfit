@@ -325,14 +325,57 @@ private fun WorkoutBuilderScreen(state: PivotUiState, onStart: () -> Unit, onBac
             BigButton("Back to check-in", onBack)
         } else {
             Text(workout.title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            MessageCard("Why this workout", workout.reason)
-            SectionTitle("Warmup")
-            workout.warmup.forEach { ExerciseRow(it.exercise.name, it.prescription, it.note) }
-            SectionTitle("Main")
-            workout.exercises.forEach { ExerciseRow(it.exercise.name, it.prescription, "Rest ${it.restSeconds}s. ${it.note}") }
-            SectionTitle("Cooldown")
-            workout.cooldown.forEach { ExerciseRow(it.exercise.name, it.prescription, it.note) }
+            WorkoutPreviewStats(workout)
             BigButton("Start workout", onStart)
+            MessageCard("Why this fits", workout.reason)
+            BuilderSection("Warmup", "${workout.warmup.size} prep moves") {
+                workout.warmup.forEach { BuilderExerciseRow(it) }
+            }
+            BuilderSection("Main work", "${workout.exercises.size} exercises") {
+                workout.exercises.forEach { BuilderExerciseRow(it) }
+            }
+            BuilderSection("Cooldown", "${workout.cooldown.size} reset moves") {
+                workout.cooldown.forEach { BuilderExerciseRow(it) }
+            }
+            BigButton("Start workout", onStart)
+        }
+    }
+}
+
+@Composable
+private fun WorkoutPreviewStats(workout: com.pivotfit.app.data.models.GeneratedWorkout) {
+    SummaryGrid(
+        items = listOf(
+            "Time" to "${workout.estimatedDuration} min",
+            "Difficulty" to workout.difficulty.label,
+            "Main" to "${workout.exercises.size} moves",
+            "Goal" to workout.goal.label
+        )
+    )
+}
+
+@Composable
+private fun BuilderSection(title: String, subtitle: String, content: @Composable ColumnScope.() -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
+            SectionTitle(title)
+            Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+        }
+        content()
+    }
+}
+
+@Composable
+private fun BuilderExerciseRow(item: com.pivotfit.app.data.models.WorkoutExercise) {
+    Card(shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(item.exercise.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(item.prescription, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("Rest ${item.restSeconds}s", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(item.exercise.equipment.joinToString { it.label }, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+            }
+            Text(item.note, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

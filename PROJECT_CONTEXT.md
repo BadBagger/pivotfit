@@ -6,7 +6,7 @@
 - Status: Android MVP source added
 - Android package: `com.pivotfit.app`
 - App scope: local-first adaptive workout app for real-life schedule, energy, equipment, soreness, and location changes
-- Latest APK release: `v0.1.10-checkin-refine`
+- Latest APK release: `v0.1.11-builder-refine`
 - Local APK artifact: `PivotFit-release.apk` may exist locally after build, but it is ignored by git
 
 ## Recent Updates
@@ -16,6 +16,7 @@
 - `v0.1.8-image-zoom` adds tap-to-enlarge exercise images on the active workout and instruction cards so form examples are easier to inspect on small screens.
 - `v0.1.9-time-slider` replaces the Today Check-In fixed time chips with a 5-60 minute slider so users can choose the actual time they have.
 - `v0.1.10-checkin-refine` groups Today Check-In into clearer cards, adds -5/+5 and quick time controls, and shows a plain-language summary before workout generation.
+- `v0.1.11-builder-refine` improves the workout preview with top-level stats, a clearer reason card, scannable warmup/main/cooldown sections, and a start button near the top.
 
 ## DevHub
 

@@ -8,7 +8,7 @@ This repository now contains the Android MVP source.
 
 - Package: `com.pivotfit.app`
 - Stack: Kotlin, Jetpack Compose, Material 3, Room, DataStore
-- Version: `0.1.3-completion-summary`, `versionCode = 4`
+- Version: `0.1.4-icon-refresh`, `versionCode = 5`
 - Local installer artifact: `PivotFit-release.apk` when built locally
 
 ## MVP Scope
@@ -21,6 +21,7 @@ This repository now contains the Android MVP source.
 - Progress, flexible plan, equipment, recovery, preferences, privacy, safety, and settings screens.
 - First-run onboarding for goal, experience, preferred length, equipment, beginner mode, quiet workouts, and low-sweat defaults.
 - Workout completion summary with exercises completed, pivots, skipped exercises, soreness flags, minutes, RPE, and next recommendation.
+- App icon refreshed from supplied artwork with outer background removed.
 
 ## Build
 

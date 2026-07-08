@@ -22,7 +22,7 @@ This repository now contains the Android MVP source.
 - First-run onboarding for goal, experience, preferred length, equipment, beginner mode, quiet workouts, and low-sweat defaults.
 - Workout completion summary with exercises completed, pivots, skipped exercises, soreness flags, minutes, RPE, and next recommendation.
 - App icon refreshed from supplied artwork with outer background removed.
-- Active workouts and exercise details include instructions, common mistakes, and generated visual guidance for every exercise through specific and movement-pattern image assets.
+- Active workouts and exercise details include instructions, common mistakes, and generated visual guidance for every exercise through specific, family-specific, and movement-pattern image assets.
 
 ## Build
 

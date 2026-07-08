@@ -383,6 +383,28 @@ private fun exerciseGuidanceImageRes(exercise: Exercise): Int =
     when (exercise.id) {
         "bear-crawl-hold" -> R.drawable.exercise_bear_crawl
         "bodyweight-squat" -> R.drawable.exercise_squat
+        "reverse-lunge", "split-squat", "db-step-up" -> R.drawable.exercise_lunge
+        "glute-bridge", "barbell-hip-thrust" -> R.drawable.exercise_glute_bridge
+        "calf-raise" -> R.drawable.exercise_calf_raise
+        "plank" -> R.drawable.exercise_plank
+        "side-plank" -> R.drawable.exercise_side_plank
+        "dead-bug", "band-dead-bug-pulldown" -> R.drawable.exercise_dead_bug
+        "bird-dog" -> R.drawable.exercise_bird_dog
+        "mountain-climber" -> R.drawable.exercise_mountain_climber
+        "db-curl", "barbell-curl", "cable-curl", "band-curl" -> R.drawable.exercise_curl
+        "chair-dip", "db-triceps-extension", "cable-pressdown", "band-pressdown" -> R.drawable.exercise_triceps_extension
+        "pike-pushup", "db-shoulder-press", "barbell-overhead-press", "landmine-press", "kb-press" -> R.drawable.exercise_shoulder_press
+        "leg-press" -> R.drawable.exercise_leg_press
+        "leg-extension" -> R.drawable.exercise_leg_extension
+        "leg-curl" -> R.drawable.exercise_leg_curl
+        "kb-swing" -> R.drawable.exercise_kettlebell_swing
+        "kb-clean" -> R.drawable.exercise_kettlebell_clean
+        "kb-halo" -> R.drawable.exercise_kettlebell_halo
+        "brisk-walk", "easy-walk", "treadmill-walk", "treadmill-intervals", "stairs-easy" -> R.drawable.exercise_walk
+        "bike-easy", "bike-intervals" -> R.drawable.exercise_bike
+        "rower-easy", "rower-intervals" -> R.drawable.exercise_rower
+        "shadow-boxing" -> R.drawable.exercise_shadow_boxing
+        "cat-cow", "childs-pose-breathing" -> R.drawable.exercise_floor_mobility
         else -> when (exercise.movementPattern) {
             MovementPattern.Push -> R.drawable.exercise_push
             MovementPattern.Pull -> R.drawable.exercise_pull

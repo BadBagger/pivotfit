@@ -11,7 +11,7 @@
 
 ## Recent Updates
 
-- `v0.1.6-generated-guidance` replaces the abstract movement diagrams with generated exercise visual assets, including clearer bear crawl and squat examples plus movement-pattern fallbacks for every workout.
+- `v0.1.6-generated-guidance` replaces the abstract movement diagrams with generated exercise visual assets, including clearer bear crawl, squat, core, arm, machine, kettlebell, cardio, and mobility examples plus movement-pattern fallbacks for every workout.
 
 ## DevHub
 

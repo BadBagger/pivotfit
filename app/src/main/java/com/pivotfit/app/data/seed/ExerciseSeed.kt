@@ -71,7 +71,7 @@ object ExerciseSeed {
         ).forEach { (id, name, group) ->
             addExercise(id, name, ExerciseCategory.Strength, setOf(group), bw, Difficulty.Easy, when (group) {
                 MuscleGroup.Chest -> MovementPattern.Push
-                MuscleGroup.Legs -> MovementPattern.Squat
+                MuscleGroup.Legs -> if (id.contains("lunge") || id.contains("split-squat")) MovementPattern.Lunge else MovementPattern.Squat
                 MuscleGroup.Core -> MovementPattern.Core
                 else -> MovementPattern.Push
             }, quiet = id != "mountain-climber")
@@ -98,7 +98,7 @@ object ExerciseSeed {
                 MuscleGroup.Back -> MovementPattern.Pull
                 MuscleGroup.Core -> MovementPattern.Core
                 MuscleGroup.FullBody -> MovementPattern.Carry
-                else -> MovementPattern.Hinge
+                MuscleGroup.Legs -> if (id.contains("step-up")) MovementPattern.Lunge else if (id.contains("squat")) MovementPattern.Squat else MovementPattern.Hinge
             })
         }
 
